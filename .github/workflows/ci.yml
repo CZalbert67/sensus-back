@@ -19,12 +19,24 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "true"
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
   CI: "true"
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
 jobs:
   build-and-test:
     name: Compilación, pruebas y cobertura
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      mongo:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
@@ -52,9 +64,21 @@ jobs:
           --collect:"XPlat Code Coverage"
           --results-directory ./artifacts/coverage
           --logger "trx;LogFileName=results.trx"
+        env:
+          MONGO_CONNECTION_STRING: mongodb://localhost:27017
+
+      - name: Pruebas de integración (MongoDB real vía Testcontainers)
+        run: >
+          dotnet test sensus-back.sln
+          --configuration Release
+          --no-build
+          --filter "FullyQualifiedName~Integration"
+          --results-directory ./artifacts/integration
+          --logger "trx;LogFileName=integration.trx"
+        env:
+          MONGO_CONNECTION_STRING: mongodb://localhost:27017
 
       - name: Umbral de cobertura (Domain y Application ≥ 80 %)
-        continue-on-error: true
         run: node .github/scripts/check-coverage.mjs artifacts/coverage 80 Sensus.Domain Sensus.Application
 
       - name: Publicar resultados de pruebas
@@ -64,6 +88,95 @@ jobs:
           name: test-results
           path: ./artifacts/coverage
           retention-days: 14
+
+  snyk-security:
+    name: Seguridad de dependencias y código (Snyk)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Instalar Snyk CLI
+        run: npm install -g snyk
+
+      - name: Autenticar Snyk
+        run: snyk auth ${SNYK_TOKEN}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Restaurar dependencias
+        run: dotnet restore sensus-back.sln
+
+      - name: Snyk test dependencias (bloqueante)
+        run: snyk test --severity-threshold=high --all-projects
+
+      - name: Snyk monitor (registro de dependencias)
+        if: github.event_name == 'push'
+        run: snyk monitor --all-projects
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  sonarcloud:
+    name: Calidad de código (SonarCloud)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Instalar SonarScanner para .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Iniciar análisis SonarCloud
+        run: >
+          dotnet sonarscanner begin
+          /k:"sensus-back"
+          /o:"${{ secrets.SONAR_ORGANIZATION }}"
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.sources="src/"
+          /d:sonar.tests="tests/"
+          /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,**/*.Generated*.cs,**/Properties/**,**/Migrations/**"
+          /d:sonar.cs.dotnet.reportsPaths="./artifacts/coverage/coverage.cobertura.xml"
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Compilar
+        run: dotnet build sensus-back.sln --configuration Release --no-restore
+
+      - name: Ejecutar pruebas con cobertura
+        run: >
+          dotnet test sensus-back.sln
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory ./artifacts/coverage
+          /p:CoverletOutputFormat=cobertura
+          /p:CoverletOutput=./artifacts/coverage/
+        env:
+          MONGO_CONNECTION_STRING: mongodb://localhost:27017
+
+      - name: Finalizar análisis SonarCloud
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        if: always()
 
   quality:
     name: Seguridad de dependencias y secretos
@@ -86,9 +199,7 @@ jobs:
           dotnet restore sensus-back.sln
           dotnet list sensus-back.sln package --vulnerable --include-transitive
 
-      # Advertencia por diseño hasta completar rotación de secretos JWT (ver SECURITY.md y specs 001/002).
-      - name: Escaneo de secretos
-        continue-on-error: true
+      - name: Escaneo de secretos (bloqueante)
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
