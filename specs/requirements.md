@@ -340,5 +340,39 @@ Todos los requisitos del proyecto, trazables a su spec. Formato: `FR-<spec>-<nn>
 | `FR-044-06` | 044 | FR | Devolver 200 con el estado resultante tras la actualización | Must | Pendiente |
 | `NFR-044-01` | 044 | NFR | Latencia de lectura | p95 < 250 ms | Pendiente |
 | `NFR-044-02` | 044 | NFR | Respeto de preferencias | 100 % de envíos filtrados según configuración | Pendiente |
+| `FR-047-01` | 047 | FR | El pipeline compila la solución con `-warnaserror` (0 warnings, 0 errores) | Must | Pendiente |
+| `FR-047-02` | 047 | FR | Ejecuta pruebas unitarias sin integración en job aislado | Must | Pendiente |
+| `FR-047-03` | 047 | FR | Ejecuta pruebas de integración contra MongoDB real en job separado con servicio Docker | Must | Pendiente |
+| `FR-047-04` | 047 | FR | Ejecuta Snyk `test` con severidad ≥ high como paso bloqueante | Must | Pendiente |
+| `FR-047-05` | 047 | FR | Ejecuta SonarCloud análisis con calidad gate bloqueante | Must | Pendiente |
+| `FR-047-06` | 047 | FR | Ejecuta Stryker.NET pruebas de mutación como paso advisory | Should | Pendiente |
+| `FR-047-07` | 047 | FR | Ejecuta gitleaks escaneo de secretos como paso bloqueante | Must | Pendiente |
+| `FR-047-08` | 047 | FR | Verifica cobertura ≥ 80 % en `Sensus.Domain` y `Sensus.Application` como paso bloqueante | Must | Pendiente |
+| `FR-047-09` | 047 | FR | Ejecuta `dotnet format --verify-no-changes` como paso bloqueante | Must | Pendiente |
+| `FR-047-10` | 047 | FR | Ejecuta `check-specs.mjs specs` para validar 4 artefactos por spec | Must | Pendiente |
+| `FR-047-11` | 047 | FR | Ejecuta `cdk synth` y `cdk diff` en PR cuando exista `infra/` | Should | Pendiente |
+| `FR-047-12` | 047 | FR | Los secretos (`SNYK_TOKEN`, `SONAR_TOKEN`) solo como GitHub Secrets, nunca en YAML | Must | Pendiente |
+| `NFR-047-01` | 047 | NFR | Tiempo total del pipeline | < 10 minutos | Pendiente |
+| `NFR-047-02` | 047 | NFR | Cobertura de pruebas | ≥ 80 % líneas en Domain y Application | Pendiente |
+| `NFR-047-03` | 047 | NFR | Vulnerabilidades críticas/altas en dependencias | 0 | Pendiente |
+| `NFR-047-04` | 047 | NFR | Secretos en código o YAML del workflow | 0 | Pendiente |
+| `NFR-047-05` | 047 | NFR | Fallo de cualquier verificación bloqueante | Bloquea fusión (merge) | Pendiente |
+| `FR-048-01` | 048 | FR | Definir interfaz `ICacheService` con métodos `GetAsync`, `SetAsync`, `RemoveAsync`, `ExistsAsync` | Must | Pendiente |
+| `FR-048-02` | 048 | FR | Implementar `RedisCacheService` en `Sensus.Infrastructure` usando `StackExchange.Redis` | Must | Pendiente |
+| `FR-048-03` | 048 | FR | Registrar `ICacheService` en el contenedor de DI de `Sensus.Api/Program.cs` | Must | Pendiente |
+| `FR-048-04` | 048 | FR | Cachear respuestas de `GET /offers/{id}` con TTL configurable | Must | Pendiente |
+| `FR-048-05` | 048 | FR | Cachear respuestas de `GET /offers/nearby` con TTL configurable | Must | Pendiente |
+| `FR-048-06` | 048 | FR | Cachear respuestas de `GET /feed/nearby` con TTL configurable | Must | Pendiente |
+| `FR-048-07` | 048 | FR | Invalidar caché de oferta al crear, actualizar o eliminar una oferta | Must | Pendiente |
+| `FR-048-08` | 048 | FR | Invalidar caché de feed al crear, actualizar o eliminar una publicación | Must | Pendiente |
+| `FR-048-09` | 048 | FR | Invalidar caché de comercio al actualizar el perfil del comerciante | Must | Pendiente |
+| `FR-048-10` | 048 | FR | Configurar TTL por entidad en `appsettings.json` (no hardcodeado) | Must | Pendiente |
+| `FR-048-11` | 048 | FR | Devolver datos desde MongoDB si Redis no está disponible (falso graceful) | Must | Pendiente |
+| `FR-048-12` | 048 | FR | Health check del caché integrado con `/health/ready` | Should | Pendiente |
+| `NFR-048-01` | 048 | NFR | Latencia de lectura con caché | p95 < 300 ms | Pendiente |
+| `NFR-048-02` | 048 | NFR | Latencia de lectura sin caché (fallback MongoDB) | p95 < 500 ms | Pendiente |
+| `NFR-048-03` | 048 | NFR | TTL mínimo | Configurable, por entidad | Pendiente |
+| `NFR-048-04` | 048 | NFR | Disponibilidad del servicio ante caída de Redis | 100 % (fallback a MongoDB) | Pendiente |
+| `NFR-048-05` | 048 | NFR | Costo mensual | Dentro del Free Tier de AWS (ElastiCache o similar) | Pendiente |
 
-Total: **336 requisitos** en 44 specs.
+Total: **368 requisitos** en 46 specs.

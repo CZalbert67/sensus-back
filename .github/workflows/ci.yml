@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["main", "Sprint1","feature/ci-cd-snyk-sonarcloud"]
+    branches: ["main", "Sprint1"]
   pull_request:
     branches: ["main", "Sprint1"]
   workflow_dispatch:
@@ -24,19 +24,9 @@ env:
 
 jobs:
   build-and-test:
-    name: Compilación, pruebas y cobertura
+    name: Compilación, pruebas unitarias y cobertura
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    services:
-      mongo:
-        image: mongo:8.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })' || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout
@@ -61,22 +51,10 @@ jobs:
           dotnet test sensus-back.sln
           --configuration Release
           --no-build
+          --filter "FullyQualifiedName!~Integration"
           --collect:"XPlat Code Coverage"
           --results-directory ./artifacts/coverage
           --logger "trx;LogFileName=results.trx"
-        env:
-          MONGO_CONNECTION_STRING: mongodb://localhost:27017
-
-      - name: Pruebas de integración (MongoDB real vía Testcontainers)
-        run: >
-          dotnet test sensus-back.sln
-          --configuration Release
-          --no-build
-          --filter "FullyQualifiedName~Integration"
-          --results-directory ./artifacts/integration
-          --logger "trx;LogFileName=integration.trx"
-        env:
-          MONGO_CONNECTION_STRING: mongodb://localhost:27017
 
       - name: Umbral de cobertura (Domain y Application ≥ 80 %)
         run: node .github/scripts/check-coverage.mjs artifacts/coverage 80 Sensus.Domain Sensus.Application
@@ -87,6 +65,53 @@ jobs:
         with:
           name: test-results
           path: ./artifacts/coverage
+          retention-days: 14
+
+  integration-tests:
+    name: Pruebas de integración (MongoDB real)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mongo:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar
+        run: dotnet restore sensus-back.sln
+
+      - name: Compilar
+        run: dotnet build sensus-back.sln --configuration Release --no-restore
+
+      - name: Pruebas de integración (Testcontainers + MongoDB real)
+        run: >
+          dotnet test tests/Sensus.IntegrationTests/Sensus.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --logger "trx;LogFileName=integration.trx"
+        env:
+          MONGO_CONNECTION_STRING: mongodb://localhost:27017
+
+      - name: Publicar resultados de integración
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results
+          path: ./artifacts/integration
           retention-days: 14
 
   snyk-security:
@@ -123,11 +148,39 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+  mutation-testing:
+    name: Pruebas de mutación (Stryker.NET)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar
+        run: dotnet restore sensus-back.sln
+
+      - name: Compilar
+        run: dotnet build sensus-back.sln --configuration Release --no-restore
+
+      - name: Instalar dotnet-stryker
+        run: dotnet tool install --global dotnet-stryker
+
+      - name: Ejecutar pruebas de mutación (advisory, no bloquea)
+        run: dotnet stryker --project tests/Sensus.Application.UnitTests/Sensus.Application.UnitTests.csproj --open-report never
+        continue-on-error: true
+
   sonarcloud:
     name: Calidad de código (SonarCloud)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: build-and-test
+    needs: [build-and-test, integration-tests, mutation-testing]
 
     steps:
       - name: Checkout
@@ -160,7 +213,7 @@ jobs:
       - name: Compilar
         run: dotnet build sensus-back.sln --configuration Release --no-restore
 
-      - name: Ejecutar pruebas con cobertura
+      - name: Ejecutar pruebas con cobertura para SonarCloud
         run: >
           dotnet test sensus-back.sln
           --configuration Release
