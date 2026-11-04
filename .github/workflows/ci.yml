@@ -55,6 +55,8 @@ jobs:
           --collect:"XPlat Code Coverage"
           --results-directory ./artifacts/coverage
           --logger "trx;LogFileName=results.trx"
+          /p:CoverletOutputFormat=cobertura
+          /p:CoverletOutput=./artifacts/coverage/
 
       - name: Umbral de cobertura (Domain y Application ≥ 80 %)
         run: node .github/scripts/check-coverage.mjs artifacts/coverage 80 Sensus.Domain Sensus.Application
