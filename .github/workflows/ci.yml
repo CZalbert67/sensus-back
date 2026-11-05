@@ -244,6 +244,12 @@ jobs:
       - name: Verificar que se generó el reporte de cobertura
         run: test -n "$(find ./artifacts/coverage -name 'coverage.cobertura.xml' -print -quit)"
 
+      - name: Normalizar rutas del reporte de cobertura
+        run: |
+          find ./artifacts/coverage -name 'coverage.cobertura.xml' -print0 | while IFS= read -r -d '' f; do
+            sed -i "s|${GITHUB_WORKSPACE}/||g" "$f"
+          done
+
       - name: Finalizar análisis SonarCloud
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
         env:
