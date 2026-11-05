@@ -29,7 +29,8 @@ public class MerchantE2EJourneyTests : IClassFixture<SensusE2EWebApplicationFact
     {
         // 1. Registrar usuario
         var email = $"merchant.e2e.{Guid.NewGuid():N}@sensus.com";
-        var password = "Password123#";
+        // Contraseña efímera: evita credenciales literales en el repositorio (AGENTS.md §12).
+        var password = $"Sensus-{Guid.NewGuid():N}-Aa1#";
         var regRes = await _client.PostAsJsonAsync("/api/v1/auth/register", new RegisterUserCommand("Dueño Panadería", email, password, true));
         regRes.StatusCode.Should().Be(HttpStatusCode.Created);
         var regData = await regRes.Content.ReadFromJsonAsync<AuthResponseDto>();
