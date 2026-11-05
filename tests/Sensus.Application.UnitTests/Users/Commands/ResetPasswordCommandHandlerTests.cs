@@ -44,7 +44,7 @@ public class ResetPasswordCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldUpdatePasswordAndRotateSecurityStamp_WhenTokenIsValid()
     {
-        var rawToken = "valid-token-secret";
+        var rawToken = Guid.NewGuid().ToString("N");
         var user = User.Create("Oscar", "oscar@sensus.com", "old-hash", true, _nowUtc).Value;
         var oldStamp = user.SecurityStamp;
 
@@ -73,7 +73,7 @@ public class ResetPasswordCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldFail_WhenTokenIsExpiredByTime()
     {
-        var rawToken = "expired-token-secret";
+        var rawToken = Guid.NewGuid().ToString("N");
         var userId = Guid.NewGuid();
         // Creado hace 20 minutos
         var token = PasswordResetToken.Create(userId, "u@s.com", rawToken, _nowUtc.AddMinutes(-20), 15).Value;

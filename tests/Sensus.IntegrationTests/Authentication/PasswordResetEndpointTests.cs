@@ -85,7 +85,7 @@ public class PasswordResetEndpointTests : IClassFixture<CustomWebApplicationFact
             true,
             DateTime.UtcNow).Value;
 
-        var rawToken = "sample-secret-token-1234567890123456";
+        var rawToken = Guid.NewGuid().ToString("N");
         var tokenHash = PasswordResetToken.ComputeHash(rawToken);
 
         var resetToken = PasswordResetToken.Create(
@@ -116,7 +116,7 @@ public class PasswordResetEndpointTests : IClassFixture<CustomWebApplicationFact
     public async Task ResetPassword_ShouldReturnBadRequest_WhenTokenIsExpiredOrAlreadyUsed()
     {
         // Arrange
-        var rawToken = "already-used-or-expired-token";
+        var rawToken = Guid.NewGuid().ToString("N");
         var tokenHash = PasswordResetToken.ComputeHash(rawToken);
 
         _factory.PasswordResetTokenRepository.TryConsumeAsync(tokenHash, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())

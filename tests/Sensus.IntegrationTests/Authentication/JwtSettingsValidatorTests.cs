@@ -14,7 +14,7 @@ public class JwtSettingsValidatorTests
     {
         var settings = new JwtSettings
         {
-            Secret = "short-secret",
+            Secret = new string('x', 12),
             Issuer = "SensusApi",
             Audience = "SensusApp",
             ExpiryMinutes = 60
