@@ -8,7 +8,7 @@ Usar antes, durante y al cierre de la implementación. Ninguna tarea se cierra c
 
 - [ ] La spec 007 está aprobada y sin preguntas bloqueantes
 - [ ] Los requisitos tienen identificador y criterio medible
-- [ ] Las dependencias están resueltas: 005, 010
+- [ ] Las dependencias están resueltas: 005, 010, 034
 - [ ] El alcance y las exclusiones están declarados
 - [ ] El impacto en seguridad, costo y rendimiento fue evaluado
 
@@ -18,6 +18,12 @@ Usar antes, durante y al cierre de la implementación. Ninguna tarea se cierra c
 - [ ] El máximo de página está validado
 - [ ] El índice geoespacial se usa en la consulta
 - [ ] Las ofertas no vigentes nunca aparecen
+- [x] El radio de 1–5 km para registrado está documentado (`FR-007-08`)
+- [x] El radio estricto de 2 km para invitado está documentado (`FR-007-09`)
+- [x] La equivalencia SQL Server → MongoDB está documentada (`spec.md` §8)
+- [x] El mapeo `SE-008/011/012/013/016 → FR` está registrado (`spec.md` §9)
+- [x] La ruta canónica y el alias del catálogo de la escuela están documentados
+- [ ] La consulta devuelve la distancia con `$geoNear` + `distanceField`
 
 ## C. Antes de entregar (Definition of Done)
 
@@ -50,9 +56,11 @@ Usar antes, durante y al cierre de la implementación. Ninguna tarea se cierra c
 | Pruebas unitarias | `tests/Sensus.Application.UnitTests/` | ☐ |
 | Pruebas de integración | `tests/Sensus.IntegrationTests/` | ☐ |
 | Contrato OpenAPI | `contracts/openapi.yaml` | ☐ |
+| Equivalencia SQL Server → MongoDB | `spec.md` §8 | ☑ |
+| Mapeo `SE-###` → FR | `spec.md` §9 | ☑ |
 
 ## F. Registro
 
 | Fecha | Responsable | Resultado | Observaciones |
 |---|---|---|---|
-| — | — | — | — |
+| 2026-11-05 | Agente OpenCode | Alineación documental v1.1.0 | Se añadieron `FR-007-08`/`FR-007-09`, la equivalencia SQL Server → MongoDB y el mapeo SE-008/011/012/013/016 → FR. Sin cambios de código. |

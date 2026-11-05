@@ -4,9 +4,13 @@
 |---|---|
 | Spec | [`spec.md`](spec.md) |
 | Estado del plan | Aprobado |
-| Versión | 1.0.0 |
+| Versión | 1.1.0 |
 | Constitution Check | PASS CON OBSERVACIONES |
 | Alineado a | `constitution.md` v1.2.0 · `AGENTS.md` v1.2.0 |
+
+> **v1.1.0** — Se aclara el uso de `$geoNear` para devolver la distancia, se registra que la
+> colección `offers` depende de la spec 034 y se añaden las tareas documentales de alineación con el
+> backlog de la escuela (T007-11 a T007-13).
 
 ## 1. Resumen técnico
 
@@ -23,6 +27,12 @@ Permitir que un usuario descubra ofertas activas cerca de su ubicación, con fil
 ## 3. Modelo de datos e índices
 
 - offers con location 2dsphere, status, stock, startsAt y endsAt; índice compuesto status + endsAt
+- `location` se modela como `GeoJsonPoint<GeoJson2DGeographicCoordinates>` (`{ type: "Point", coordinates: [lng, lat] }`).
+- La colección `offers` **no existe todavía**: su entidad, documento e índice se crean en la spec 034
+  (creación de oferta). Este plan depende de esa spec además de 005 y 010.
+- Para devolver la distancia (`FR-007-07`) se usa una **agregación `$geoNear` con `distanceField`**;
+  `NearSphere` solo filtra y no expone la distancia. Equivalencia con `STDistance()` de SQL Server
+  documentada en `spec.md` §8.
 
 ## 4. Seguridad
 
@@ -44,6 +54,8 @@ Sin costo incremental: Lambda y API Gateway dentro del Free Tier.
 - Integración de paginación y límites
 - Prueba de orden por distancia
 - Prueba de exclusión por estado y vigencia
+- Prueba de radio: aceptar 1–5 km para registrado (`FR-007-08`) y limitar a 2 km para invitado (`FR-007-09`)
+- Prueba de que la respuesta incluye la distancia en metros (`$geoNear` + `distanceField`)
 
 ## 8. Constitution Check
 
@@ -78,3 +90,6 @@ Evaluación previa a la implementación.
 8. `T007-08` Implementar las pruebas de integración del flujo completo
 9. `T007-09` Actualizar `specs/README.md`, `requirements.md` y el checklist del spec
 10. `T007-10` Registrar evidencias del Constitution Check
+11. `T007-11` Documentar la equivalencia SQL Server → MongoDB (`spec.md` §8)
+12. `T007-12` Registrar el mapeo SE-008/011/012/013/016 → FR (`spec.md` §9)
+13. `T007-13` Validar el radio 1–5 km registrado y 2 km invitado (`FR-007-08`, `FR-007-09`)

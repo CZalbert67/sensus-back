@@ -55,6 +55,8 @@ Todos los requisitos del proyecto, trazables a su spec. Formato: `FR-<spec>-<nn>
 | `FR-007-05` | 007 | FR | Ordenar por distancia ascendente y desempatar por fecha de publicación | Must | Pendiente |
 | `FR-007-06` | 007 | FR | Limitar el radio a 50 km y rechazar valores fuera de rango | Must | Pendiente |
 | `FR-007-07` | 007 | FR | Devolver la distancia en metros junto a cada oferta | Should | Pendiente |
+| `FR-007-08` | 007 | FR | Aceptar un radio de 1 a 5 km para el usuario registrado y rechazar valores fuera de ese rango | Must | Pendiente |
+| `FR-007-09` | 007 | FR | Aplicar un radio máximo estricto de 2 km para el usuario invitado | Must | Pendiente |
 | `NFR-007-01` | 007 | NFR | Latencia del listado | p95 < 500 ms | Pendiente |
 | `NFR-007-02` | 007 | NFR | Consulta geoespacial | Sin recorrido completo de colección (índice 2dsphere) | Pendiente |
 | `FR-008-01` | 008 | FR | Eliminar el grupo de rutas /api/v1/comercio | Must | Pendiente |
@@ -375,4 +377,4 @@ Todos los requisitos del proyecto, trazables a su spec. Formato: `FR-<spec>-<nn>
 | `NFR-048-04` | 048 | NFR | Disponibilidad del servicio ante caída de Redis | 100 % (fallback a MongoDB) | Pendiente |
 | `NFR-048-05` | 048 | NFR | Costo mensual | Dentro del Free Tier de AWS (ElastiCache o similar) | Pendiente |
 
-Total: **368 requisitos** en 46 specs.
+Total: **370 requisitos** en 46 specs.
