@@ -229,26 +229,22 @@ jobs:
       - name: Compilar
         run: dotnet build sensus-back.sln --configuration Release --no-restore
 
+      - name: Instalar dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage
+
       - name: Ejecutar pruebas con cobertura para SonarCloud
-        run: >
-          dotnet test sensus-back.sln
-          --configuration Release
-          --no-build
-          --collect:"XPlat Code Coverage"
-          --results-directory ./artifacts/coverage
-          /p:CoverletOutputFormat=cobertura
-          /p:CoverletOutput=./artifacts/coverage/
+        run: |
+          dotnet-coverage collect "dotnet test sensus-back.sln --configuration Release --no-build" -f cobertura -o ./artifacts/coverage/coverage.cobertura.xml
         env:
           MONGO_CONNECTION_STRING: mongodb://localhost:27017
 
       - name: Verificar que se generó el reporte de cobertura
-        run: test -n "$(find ./artifacts/coverage -name 'coverage.cobertura.xml' -print -quit)"
+        run: test -f ./artifacts/coverage/coverage.cobertura.xml
 
-      - name: Normalizar rutas del reporte de cobertura
+      - name: Normalizar rutas absolutas del reporte de cobertura
         run: |
-          find ./artifacts/coverage -name 'coverage.cobertura.xml' -print0 | while IFS= read -r -d '' f; do
-            sed -i "s|${GITHUB_WORKSPACE}/||g" "$f"
-          done
+          WORKSPACE=$(git rev-parse --show-toplevel)
+          sed -i "s|${WORKSPACE}/||g" ./artifacts/coverage/coverage.cobertura.xml
 
       - name: Finalizar análisis SonarCloud
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
