@@ -243,8 +243,8 @@ jobs:
 
       - name: Normalizar rutas absolutas del reporte de cobertura
         run: |
-          WORKSPACE=$(git rev-parse --show-toplevel)
-          sed -i "s|${WORKSPACE}/||g" ./artifacts/coverage/coverage.cobertura.xml
+          sed -i -E 's|filename="[^"]*/src/([^/]+\.cs)"|filename="src/\1"|g' ./artifacts/coverage/coverage.cobertura.xml
+          sed -i -E 's|filename="[^"]*/tests/([^/]+\.cs)"|filename="tests/\1"|g' ./artifacts/coverage/coverage.cobertura.xml
 
       - name: Finalizar análisis SonarCloud
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
