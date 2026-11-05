@@ -222,7 +222,7 @@ jobs:
           /d:sonar.sources="src/"
           /d:sonar.tests="tests/"
           /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,**/*.Generated*.cs,**/Properties/**,**/Migrations/**,**/Program.cs,**/Persistence/Mongo/**,**/Services/CloudinaryImageStorage.cs,**/Services/HttpMailerEmailSender.cs,**/Services/NominatimGeocodingService.cs"
-          /d:sonar.cs.opencover.reportsPaths="./artifacts/coverage/**/coverage.opencover.xml"
+          /d:sonar.cs.cobertura.reportsPaths="./artifacts/coverage/**/coverage.cobertura.xml"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -234,13 +234,15 @@ jobs:
           dotnet test sensus-back.sln
           --configuration Release
           --no-build
-          --collect:"XPlat Code Coverage;Format=opencover"
+          --collect:"XPlat Code Coverage"
           --results-directory ./artifacts/coverage
+          /p:CoverletOutputFormat=cobertura
+          /p:CoverletOutput=./artifacts/coverage/
         env:
           MONGO_CONNECTION_STRING: mongodb://localhost:27017
 
       - name: Verificar que se generó el reporte de cobertura
-        run: test -n "$(find ./artifacts/coverage -name 'coverage.opencover.xml' -print -quit)"
+        run: test -n "$(find ./artifacts/coverage -name 'coverage.cobertura.xml' -print -quit)"
 
       - name: Finalizar análisis SonarCloud
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
