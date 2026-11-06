@@ -220,7 +220,8 @@ jobs:
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,**/*.Generated*.cs,**/Properties/**,**/Migrations/**,**/Program.cs,**/Persistence/Mongo/**,**/Services/CloudinaryImageStorage.cs,**/Services/HttpMailerEmailSender.cs,**/Services/NominatimGeocodingService.cs"
-          /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml,**/coverage.opencover.xml"
+          /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          /d:sonar.qualitygate.wait=true
           /d:sonar.verbose=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -233,10 +234,13 @@ jobs:
           dotnet test sensus-back.sln
           --configuration Release
           --no-build
-          --collect:"XPlat Code Coverage;Format=opencover"
+          --collect:"XPlat Code Coverage"
           --results-directory ./artifacts/coverage
+          --
+          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         env:
           MONGO_CONNECTION_STRING: mongodb://localhost:27017
+
       - name: Verificar reportes de cobertura generados
         run: |
           echo "### Reportes OpenCover generados" >> $GITHUB_STEP_SUMMARY
