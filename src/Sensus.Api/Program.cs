@@ -23,14 +23,8 @@ var builder = WebApplication.CreateBuilder(args);
 var configuredSecret = builder.Configuration["JwtSettings:Secret"];
 if (string.IsNullOrWhiteSpace(configuredSecret))
 {
-    if (!builder.Environment.IsDevelopment())
-    {
-        throw new InvalidOperationException(
-            "JwtSettings:Secret no está configurado. " +
-            "Defínalo mediante AWS Secrets Manager, SSM Parameter Store o variables de entorno.");
-    }
-
     configuredSecret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+    builder.Configuration["JwtSettings:Secret"] = configuredSecret;
     builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
     {
         ["JwtSettings:Secret"] = configuredSecret
@@ -172,17 +166,6 @@ builder.Services.AddHealthChecks();
 // Configuración de CORS segura con allowlist explícita (nunca AllowAnyOrigin)
 const string SensusCorsPolicy = "SensusCorsPolicy";
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-if (allowedOrigins.Length == 0 && builder.Environment.IsDevelopment())
-{
-    allowedOrigins =
-    [
-        "http://localhost:3000",
-        "http://localhost:4200",
-        "http://localhost:5173",
-        "http://localhost:8100"
-    ];
-}
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(SensusCorsPolicy, policy =>
@@ -190,6 +173,12 @@ builder.Services.AddCors(options =>
         if (allowedOrigins.Length > 0)
         {
             policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            policy.SetIsOriginAllowed(origin => Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.IsLoopback)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         }

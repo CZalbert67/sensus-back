@@ -220,7 +220,8 @@ jobs:
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,**/*.Generated*.cs,**/Properties/**,**/Migrations/**,**/Program.cs,**/Persistence/Mongo/**,**/Services/CloudinaryImageStorage.cs,**/Services/HttpMailerEmailSender.cs,**/Services/NominatimGeocodingService.cs"
-          /d:sonar.cs.opencover.reportsPaths="./artifacts/coverage/**/coverage.opencover.xml"
+          /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml,**/coverage.opencover.xml"
+          /d:sonar.verbose=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -237,12 +238,12 @@ jobs:
         env:
           MONGO_CONNECTION_STRING: mongodb://localhost:27017
 
-      - name: Normalizar rutas del reporte de cobertura OpenCover
+      - name: Verificar reportes de cobertura generados
         run: |
-          find ./artifacts/coverage -name 'coverage.opencover.xml' -print0 | while IFS= read -r -d '' f; do
-            echo "Normalizando rutas en $f..."
-            sed -i "s|${GITHUB_WORKSPACE}/||g" "$f"
-          done
+          echo "=== Reportes OpenCover encontrados ==="
+          find ./artifacts/coverage -name 'coverage.opencover.xml' -ls
+          echo "=== Primeras 10 líneas de rutas en el reporte OpenCover ==="
+          grep -m 10 '<File ' $(find ./artifacts/coverage -name 'coverage.opencover.xml' | head -n 1) || true
 
       - name: Finalizar análisis SonarCloud
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
