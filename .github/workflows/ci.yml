@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["main", "Sprint1","feature/ci-cd-snyk-sonarcloud"]
+    branches: ["main", "Sprint1"]
   pull_request:
-    branches: ["main", "Sprint1","feature/ci-cd-snyk-sonarcloud"]
+    branches: ["main", "Sprint1"]
   workflow_dispatch:
 
 concurrency:
