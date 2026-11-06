@@ -38,7 +38,7 @@ public class DeleteAccountEndpointTests : IClassFixture<CustomWebApplicationFact
     {
         // Arrange
         var passwordHasher = _factory.Services.GetRequiredService<IPasswordHasher>();
-        var rawPassword = "ValidPassword123#";
+        var rawPassword = $"Sensus-{Guid.NewGuid():N}-Aa1#";
         var realHash = passwordHasher.HashPassword(rawPassword);
 
         var user = User.Create(

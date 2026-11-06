@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -17,6 +18,19 @@ using Sensus.Infrastructure.Migration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// El secreto JWT nunca se versiona (AGENTS.md §8). En Development se genera uno efímero cuando
+// no está configurado; fuera de Development su ausencia es un error de configuración explícito.
+var configuredSecret = builder.Configuration["JwtSettings:Secret"];
+if (string.IsNullOrWhiteSpace(configuredSecret) && (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing")))
+{
+    configuredSecret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+    builder.Configuration["JwtSettings:Secret"] = configuredSecret;
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["JwtSettings:Secret"] = configuredSecret
+    });
+}
+
 // 1. Capa de Aplicación
 builder.Services.AddApplication();
 
@@ -29,9 +43,12 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // Configuración de Autenticación con JWT Bearer y validación de SecurityStamp
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
-var secretKey = Encoding.UTF8.GetBytes(string.IsNullOrEmpty(jwtSettings.Secret)
-    ? "Sensus_Fallback_Key_For_Early_Initialization_Must_Be_At_Least_32_Chars!"
-    : jwtSettings.Secret);
+if (string.IsNullOrWhiteSpace(jwtSettings.Secret) && !string.IsNullOrWhiteSpace(configuredSecret))
+{
+    jwtSettings.Secret = configuredSecret;
+}
+
+var secretKey = !string.IsNullOrWhiteSpace(jwtSettings.Secret) ? Encoding.UTF8.GetBytes(jwtSettings.Secret) : RandomNumberGenerator.GetBytes(48);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -146,21 +163,22 @@ builder.Services.AddOpenApi();
 // Health Checks
 builder.Services.AddHealthChecks();
 
-// Configuración de CORS segura con allowlist
+// Configuración de CORS segura con allowlist explícita (nunca AllowAnyOrigin)
+const string SensusCorsPolicy = "SensusCorsPolicy";
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy(SensusCorsPolicy, policy =>
     {
-        if (builder.Environment.IsDevelopment() && allowedOrigins.Length == 0)
+        if (allowedOrigins.Length > 0)
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         }
-        else
+        else if (builder.Environment.IsDevelopment())
         {
-            policy.WithOrigins(allowedOrigins.Length > 0 ? allowedOrigins : ["http://localhost:3000", "http://localhost:5173"])
+            policy.SetIsOriginAllowed(origin => Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.IsLoopback)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         }
@@ -172,7 +190,7 @@ var app = builder.Build();
 // Pipeline HTTP
 app.UseExceptionHandler();
 app.UseSecurityHeaders();
-app.UseCors("AllowAll");
+app.UseCors(SensusCorsPolicy);
 app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())

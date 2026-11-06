@@ -11,7 +11,7 @@ public class PasswordResetTokenTests
         var now = new DateTime(2026, 10, 29, 12, 0, 0, DateTimeKind.Utc);
         var userId = Guid.NewGuid();
         var email = "user@sensus.com";
-        var rawToken = "sample-32-byte-token-string-here";
+        var rawToken = Guid.NewGuid().ToString("N");
 
         var token = PasswordResetToken.Create(userId, email, rawToken, now, expiryMinutes: 15).Value;
 

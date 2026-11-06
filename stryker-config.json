@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.NET.Core/Options/stryker-core.schema.json",
+  "project": "./tests/Sensus.Application.UnitTests/Sensus.Application.UnitTests.csproj",
+  "projectFilePath": "./tests/Sensus.Application.UnitTests/Sensus.Application.UnitTests.csproj",
+  "log-level": "info",
+  "concourse-reporter": false,
+  "dashboard": false,
+  "additional-timeout": 120000,
+  "mutation-level": "standard",
+  "thresholds": {
+    "high": 70,
+    "low": 40,
+    "break": null
+  },
+  "thresholds-high": null,
+  "thresholds-low": null,
+  "thresholds-break": null,
+  "concurrency": 4,
+  "reporters": ["html", "clear-text", "progress"],
+  "open-report": false,
+  "ignore-methods": [
+    "System.String get_*",
+    "System.Void set_*",
+    "System.Boolean Equals(System.Object)",
+    "System.Int32 GetHashCode()",
+    "System.String ToString()"
+  ],
+  "ignore-node-types": [
+    "Constructor",
+    "PropertyGetter",
+    "PropertySetter"
+  ]
+}

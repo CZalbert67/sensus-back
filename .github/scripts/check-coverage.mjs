@@ -7,6 +7,12 @@
  *
  * Lee los reportes Cobertura generados por `dotnet test --collect:"XPlat Code Coverage"`
  * y falla si alguno de los ensamblados indicados queda por debajo del umbral de líneas.
+ *
+ * Varios proyectos de prueba pueden generar un reporte cada uno, y todos instrumentan los
+ * mismos ensamblados de producción. Por eso los reportes se **fusionan**: cada línea de código
+ * (identificada por ensamblado + clase + número de línea) se cuenta una sola vez y se marca
+ * como cubierta si cualquier reporte la ejecutó. Sumar los reportes sin fusionar inflaba el
+ * denominador y hundía artificialmente el porcentaje.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -24,8 +30,12 @@ function walk(dir) {
   return found;
 }
 
-function collectStats(xml, targets) {
-  const stats = new Map(targets.map((name) => [name, { covered: 0, valid: 0 }]));
+/**
+ * Extrae de un reporte Cobertura las líneas de los ensamblados objetivo.
+ * Devuelve un Map con clave `ensamblado|clase|númeroDeLínea` y el máximo de hits observado.
+ */
+function collectLineHits(xml, targets) {
+  const lines = new Map();
   const packageRegex = /<package\b([^>]*)>([\s\S]*?)<\/package>/g;
 
   for (const [, attributes, body] of xml.matchAll(packageRegex)) {
@@ -33,14 +43,24 @@ function collectStats(xml, targets) {
     const owner = targets.find((target) => name.includes(target));
     if (!owner) continue;
 
-    const entry = stats.get(owner);
-    for (const [, hits] of body.matchAll(/<line\b[^>]*\bhits="(\d+)"/g)) {
-      entry.valid += 1;
-      if (Number(hits) > 0) entry.covered += 1;
+    const classRegex = /<class\b([^>]*)>([\s\S]*?)<\/class>/g;
+    for (const [, classAttributes, classBody] of body.matchAll(classRegex)) {
+      const className = /name="([^"]*)"/.exec(classAttributes)?.[1] ?? '';
+      if (!className) continue;
+
+      const lineRegex = /<line\b([^>]*)\/?>/g;
+      for (const [, lineAttributes] of classBody.matchAll(lineRegex)) {
+        const number = /number="(\d+)"/.exec(lineAttributes)?.[1];
+        if (number === undefined) continue;
+        const hits = Number(/hits="(\d+)"/.exec(lineAttributes)?.[1] ?? '0');
+        const key = `${owner}|${className}|${number}`;
+        const previous = lines.get(key);
+        if (previous === undefined || hits > previous) lines.set(key, hits);
+      }
     }
   }
 
-  return stats;
+  return lines;
 }
 
 const [root, rawThreshold, ...rest] = process.argv.slice(2);
@@ -60,15 +80,23 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const total = new Map(targets.map((name) => [name, { covered: 0, valid: 0 }]));
-
+// Fusión global: una entrada por línea de código, con el máximo de hits entre reportes.
+const merged = new Map();
 for (const file of files) {
-  const stats = collectStats(fs.readFileSync(file, 'utf8'), targets);
-  for (const [name, partial] of stats) {
-    const entry = total.get(name);
-    entry.covered += partial.covered;
-    entry.valid += partial.valid;
+  const hits = collectLineHits(fs.readFileSync(file, 'utf8'), targets);
+  for (const [key, value] of hits) {
+    const previous = merged.get(key);
+    if (previous === undefined || value > previous) merged.set(key, value);
   }
+}
+
+const total = new Map(targets.map((name) => [name, { covered: 0, valid: 0 }]));
+for (const [key, hits] of merged) {
+  const owner = key.slice(0, key.indexOf('|'));
+  const entry = total.get(owner);
+  if (!entry) continue;
+  entry.valid += 1;
+  if (hits > 0) entry.covered += 1;
 }
 
 let failed = false;

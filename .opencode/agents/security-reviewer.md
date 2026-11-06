@@ -36,7 +36,9 @@ permission:
 - **Errores**: `ProblemDetails` sin trazas ni detalles internos. Sin exponer nombres de colecciones/stack.
 - **Persistencia**: Sin EF Core/ORM relacional/migraciones SQL. Consultas con paginación 20/100 y sin recorrido completo de colección donde aplique.
 - **Archivos/Multimedia**: Límites coherentes con API Gateway/Lambda. Validación tipo/tamaño. Moderación imagen+texto en misma solicitud.
-- **Dependencias**: Sin paquetes prohibidos. Revisar vulnerabilidades conocidas.
+- **Dependencias**: Sin paquetes prohibidos. Revisar vulnerabilidades conocidas con Snyk en cada pipeline.
+- **Snyk / SonarCloud**: Escaneo de dependencias (severity ≥ high bloqueante), SAST de código, calidad gate de SonarCloud. Sin `continue-on-error` en gates de seguridad.
+- **Secrets en CI**: `SNYK_TOKEN` y `SONAR_TOKEN` solo como GitHub Secrets, nunca en código ni workflow YAML en texto plano.
 - **Infra/IaC**: Solo recursos en `infra/` con CDK. Sin creación fuera de IaC.
 
 ### No

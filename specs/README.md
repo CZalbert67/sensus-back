@@ -11,7 +11,7 @@ La numeración es estable: un spec no cambia de ID una vez creado.
 | 004 | [Cierre de sesión y revocación de token](004-cierre-sesion-y-revocacion/spec.md) | Autenticación | Nuevo | 6 | Pendiente | 002 |
 | 005 | [Activación del rol comercial](005-activacion-comerciante/spec.md) | Comercios | Retro-spec | 2 | Implementado (retro-spec) | 001, 002 |
 | 006 | [Consulta de mi comercio](006-consulta-mi-comercio/spec.md) | Comercios | Retro-spec | 2 | Implementado (retro-spec) | 005 |
-| 007 | [Ofertas cercanas](007-ofertas-cercanas/spec.md) | Ofertas | Nuevo | 2 | Pendiente | 005, 010 |
+| 007 | [Ofertas cercanas](007-ofertas-cercanas/spec.md) | Ofertas | Nuevo | 2 | Pendiente | 005, 010, 034 |
 | 008 | [Retiro de endpoints legacy](008-retiro-endpoints-legacy/spec.md) | Plataforma | Nuevo | 6 | Pendiente | 001, 005, 006 |
 | 009 | [Errores uniformes con ProblemDetails](009-errores-problemdetails/spec.md) | Plataforma | Nuevo | 0 | Parcial | Ninguna |
 | 010 | [Paginación estándar](010-paginacion-estandar/spec.md) | Plataforma | Nuevo | 0 | Parcial | 009 |
@@ -49,6 +49,8 @@ La numeración es estable: un spec no cambia de ID una vez creado.
 | 042 | [Recomendaciones personalizadas](042-recomendaciones/spec.md) | Recomendaciones | Nuevo | 5 | Pendiente | 007, 038, 039, 041 |
 | 043 | [Alternativas a una oferta](043-alternativas-oferta/spec.md) | Recomendaciones | Nuevo | 5 | Pendiente | 032, 041 |
 | 044 | [Ajustes de notificaciones](044-ajustes-notificaciones/spec.md) | Integraciones | Nuevo | 4 | Pendiente | 027, 003 |
+| 047 | [Pipeline CI-CD y calidad DevSecOps](047-ci-cd-pipeline/spec.md) | Plataforma | Nuevo | 7 | Pendiente | 009, 010, 011, 012, 013 |
+| 048 | [Caché distribuido con Redis](048-cache-distribuido-redis/spec.md) | Plataforma | Nuevo | 7 | Pendiente | 010, 024, 026, 032 |
 
 ## Estados
 
@@ -66,4 +68,4 @@ La numeración es estable: un spec no cambia de ID una vez creado.
 - Todo cambio de alcance se refleja primero en `spec.md`.
 - Los requisitos se registran en [`requirements.md`](requirements.md).
 
-Total: **44 specs** — Ola 0: 3, Ola 1: 5, Ola 2: 10, Ola 3: 5, Ola 4: 9, Ola 5: 4, Ola 6: 7, Backlog: 1.
+Total: **46 specs** — Ola 0: 3, Ola 1: 5, Ola 2: 10, Ola 3: 5, Ola 4: 9, Ola 5: 4, Ola 6: 7, Ola 7: 2, Backlog: 1.

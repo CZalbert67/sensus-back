@@ -52,6 +52,9 @@ dotnet test sensus-back.sln
 dotnet test tests/Sensus.Application.UnitTests
 dotnet test tests/Sensus.ArchitectureTests
 dotnet test sensus-back.sln --collect:"XPlat Code Coverage"
+# Gates CI (bloqueantes):
+node .github/scripts/check-coverage.mjs artifacts/coverage 80 Sensus.Domain Sensus.Application
+node .github/scripts/check-specs.mjs specs
 ```
 
 ## Enlaza skills

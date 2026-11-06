@@ -92,7 +92,7 @@ public sealed class CloudinaryImageStorage : IProfileImageStorage
         }
 
         var path = urlOrPublicId[(idx + uploadMarker.Length)..];
-        path = Regex.Replace(path, @"^v\d+/", string.Empty);
+        path = Regex.Replace(path, @"^v\d+/", string.Empty, RegexOptions.None, TimeSpan.FromMilliseconds(250));
         var lastDot = path.LastIndexOf('.');
         if (lastDot > 0)
         {
