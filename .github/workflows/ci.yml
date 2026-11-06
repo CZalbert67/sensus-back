@@ -131,7 +131,7 @@ jobs:
           global-json-file: global.json
 
       - name: Instalar Snyk CLI
-        run: npm install -g snyk
+        run: npm install -g --ignore-scripts snyk@1.1308.4
 
       - name: Autenticar Snyk
         run: snyk auth ${SNYK_TOKEN}
@@ -219,7 +219,8 @@ jobs:
           /o:"sensus-proj"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="https://sonarcloud.io"
-          /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,**/*.Generated*.cs,**/Properties/**,**/Migrations/**,**/Program.cs,**/Persistence/Mongo/**,**/Services/CloudinaryImageStorage.cs,**/Services/HttpMailerEmailSender.cs,**/Services/NominatimGeocodingService.cs"
+          /d:sonar.exclusions="**/bin/**,**/obj/**,.github/**"
+          /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,**/*.Generated*.cs,**/Properties/**,**/Migration/**,**/Migrations/**,**/Program.cs,**/Persistence/Mongo/**,**/Services/CloudinaryImageStorage.cs,**/Services/HttpMailerEmailSender.cs,**/Services/NominatimGeocodingService.cs,.github/**,**/*.mjs,**/*.js"
           /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
           /d:sonar.qualitygate.wait=true
           /d:sonar.verbose=true
@@ -251,7 +252,9 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Finalizar análisis SonarCloud
+        shell: bash
         run: |
+          set -o pipefail
           dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}" 2>&1 | tee sonar_end.log
           echo "### Log final SonarScanner" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

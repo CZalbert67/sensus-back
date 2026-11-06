@@ -41,10 +41,9 @@ public sealed class SqlToMongoMigrationService
 
         _logger.LogInformation("Iniciando migración de datos desde SQL (Base_Datos_Movi;.sql) hacia MongoDB Atlas...");
 
-        // En el SQL original: Values('oscar jose salinas','oscarsa48700@gmail.com','123456789',1,'15-10-2026',1,'15-10-2026','15-10-2026')
-        // Hasheamos la contraseña con BCrypt cumpliendo el estándar de seguridad de SE-002:
-        var initialPassword = Environment.GetEnvironmentVariable("INITIAL_SEED_PASSWORD") ?? Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
-        var securePasswordHash = _passwordHasher.HashPassword(initialPassword);
+        // En el esquema SQL original: registro inicial con rol Consumidor y estado activo.
+        var seedPassword = Environment.GetEnvironmentVariable("INITIAL_SEED_PASSWORD") ?? Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+        var securePasswordHash = _passwordHasher.HashPassword(seedPassword);
 
         var migratedUser = User.Create(
             "Oscar Jose Salinas",

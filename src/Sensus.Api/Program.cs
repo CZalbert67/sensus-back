@@ -21,7 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 // El secreto JWT nunca se versiona (AGENTS.md §8). En Development se genera uno efímero cuando
 // no está configurado; fuera de Development su ausencia es un error de configuración explícito.
 var configuredSecret = builder.Configuration["JwtSettings:Secret"];
-if (string.IsNullOrWhiteSpace(configuredSecret))
+if (string.IsNullOrWhiteSpace(configuredSecret) && (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing")))
 {
     configuredSecret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
     builder.Configuration["JwtSettings:Secret"] = configuredSecret;
@@ -48,7 +48,7 @@ if (string.IsNullOrWhiteSpace(jwtSettings.Secret) && !string.IsNullOrWhiteSpace(
     jwtSettings.Secret = configuredSecret;
 }
 
-var secretKey = Encoding.UTF8.GetBytes(jwtSettings.Secret);
+var secretKey = !string.IsNullOrWhiteSpace(jwtSettings.Secret) ? Encoding.UTF8.GetBytes(jwtSettings.Secret) : RandomNumberGenerator.GetBytes(48);
 
 builder.Services.AddAuthentication(options =>
 {
