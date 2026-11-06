@@ -29,5 +29,6 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Release' Or '$(CI)' == 'true'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
   </PropertyGroup>
 </Project>

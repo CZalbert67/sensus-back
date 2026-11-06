@@ -237,16 +237,22 @@ jobs:
           --results-directory ./artifacts/coverage
         env:
           MONGO_CONNECTION_STRING: mongodb://localhost:27017
-
       - name: Verificar reportes de cobertura generados
         run: |
-          echo "=== Reportes OpenCover encontrados ==="
-          find ./artifacts/coverage -name 'coverage.opencover.xml' -ls
-          echo "=== Primeras 10 líneas de rutas en el reporte OpenCover ==="
-          grep -m 10 '<File ' $(find ./artifacts/coverage -name 'coverage.opencover.xml' | head -n 1) || true
+          echo "### Reportes OpenCover generados" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find ./artifacts/coverage -name 'coverage.opencover.xml' -ls >> $GITHUB_STEP_SUMMARY
+          echo '--- Muestra de rutas en el reporte ---' >> $GITHUB_STEP_SUMMARY
+          grep -m 10 '<File ' $(find ./artifacts/coverage -name 'coverage.opencover.xml' | head -n 1) >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Finalizar análisis SonarCloud
-        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        run: |
+          dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}" 2>&1 | tee sonar_end.log
+          echo "### Log final SonarScanner" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -n 80 sonar_end.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         if: always() && steps.sonar_begin.outcome == 'success'
