@@ -20,7 +20,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // El secreto JWT nunca se versiona (AGENTS.md §8). En Development se genera uno efímero cuando
 // no está configurado; fuera de Development su ausencia es un error de configuración explícito.
-if (string.IsNullOrWhiteSpace(builder.Configuration["JwtSettings:Secret"]))
+var configuredSecret = builder.Configuration["JwtSettings:Secret"];
+if (string.IsNullOrWhiteSpace(configuredSecret))
 {
     if (!builder.Environment.IsDevelopment())
     {
@@ -29,9 +30,10 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["JwtSettings:Secret"]))
             "Defínalo mediante AWS Secrets Manager, SSM Parameter Store o variables de entorno.");
     }
 
+    configuredSecret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
     builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
     {
-        ["JwtSettings:Secret"] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48))
+        ["JwtSettings:Secret"] = configuredSecret
     });
 }
 
@@ -47,6 +49,11 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // Configuración de Autenticación con JWT Bearer y validación de SecurityStamp
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
+if (string.IsNullOrWhiteSpace(jwtSettings.Secret) && !string.IsNullOrWhiteSpace(configuredSecret))
+{
+    jwtSettings.Secret = configuredSecret;
+}
+
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings.Secret);
 
 builder.Services.AddAuthentication(options =>
@@ -163,8 +170,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
 // Configuración de CORS segura con allowlist explícita (nunca AllowAnyOrigin)
+const string SensusCorsPolicy = "SensusCorsPolicy";
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-if (allowedOrigins.Length == 0)
+if (allowedOrigins.Length == 0 && builder.Environment.IsDevelopment())
 {
     allowedOrigins =
     [
@@ -177,11 +185,14 @@ if (allowedOrigins.Length == 0)
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy(SensusCorsPolicy, policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
 
@@ -190,7 +201,7 @@ var app = builder.Build();
 // Pipeline HTTP
 app.UseExceptionHandler();
 app.UseSecurityHeaders();
-app.UseCors("AllowAll");
+app.UseCors(SensusCorsPolicy);
 app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())

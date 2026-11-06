@@ -219,38 +219,37 @@ jobs:
           /o:"sensus-proj"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="https://sonarcloud.io"
-          /d:sonar.sources="src/"
-          /d:sonar.tests="tests/"
           /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,**/*.Generated*.cs,**/Properties/**,**/Migrations/**,**/Program.cs,**/Persistence/Mongo/**,**/Services/CloudinaryImageStorage.cs,**/Services/HttpMailerEmailSender.cs,**/Services/NominatimGeocodingService.cs"
-          /d:sonar.cs.cobertura.reportsPaths="./artifacts/coverage/**/coverage.cobertura.xml"
+          /d:sonar.cs.opencover.reportsPaths="./artifacts/coverage/**/coverage.opencover.xml"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Compilar
         run: dotnet build sensus-back.sln --configuration Release --no-restore
 
-      - name: Instalar dotnet-coverage
-        run: dotnet tool install --global dotnet-coverage
-
-      - name: Ejecutar pruebas con cobertura para SonarCloud
-        run: |
-          dotnet-coverage collect "dotnet test sensus-back.sln --configuration Release --no-build" -f cobertura -o ./artifacts/coverage/coverage.cobertura.xml
+      - name: Ejecutar pruebas con cobertura OpenCover para SonarCloud
+        run: >
+          dotnet test sensus-back.sln
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage;Format=opencover"
+          --results-directory ./artifacts/coverage
         env:
           MONGO_CONNECTION_STRING: mongodb://localhost:27017
 
-      - name: Verificar que se generó el reporte de cobertura
-        run: test -f ./artifacts/coverage/coverage.cobertura.xml
-
-      - name: Normalizar rutas absolutas del reporte de cobertura
+      - name: Normalizar rutas del reporte de cobertura OpenCover
         run: |
-          sed -i -E 's|filename="[^"]*/src/([^/]+\.cs)"|filename="src/\1"|g' ./artifacts/coverage/coverage.cobertura.xml
-          sed -i -E 's|filename="[^"]*/tests/([^/]+\.cs)"|filename="tests/\1"|g' ./artifacts/coverage/coverage.cobertura.xml
+          find ./artifacts/coverage -name 'coverage.opencover.xml' -print0 | while IFS= read -r -d '' f; do
+            echo "Normalizando rutas en $f..."
+            sed -i "s|${GITHUB_WORKSPACE}/||g" "$f"
+          done
 
       - name: Finalizar análisis SonarCloud
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         if: always() && steps.sonar_begin.outcome == 'success'
+
 
   quality:
     name: Seguridad de dependencias y secretos
